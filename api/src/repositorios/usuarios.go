@@ -80,6 +80,23 @@ func (usuario Usuarios) BusacarUsuarioPorID(usuarioID uint64) (models.Usuario, e
 	return usuarioBuscado, nil
 }
 
+func (usuario Usuarios) BusacarUsuarioPorEmail(email string) (models.Usuario, error) {
+	var usuarioBuscado models.Usuario
+	linha, erro := usuario.db.Query("select id, senha from usuarios where email = ?", email)
+	if erro != nil {
+		return models.Usuario{}, erro
+	}
+	defer linha.Close()
+
+	if linha.Next() {
+		if erro = linha.Scan(&usuarioBuscado.ID, &usuarioBuscado.Senha); erro != nil {
+			return models.Usuario{}, erro
+		}
+	}
+
+	return usuarioBuscado, nil
+}
+
 func (usuario Usuarios) AtualizarUsuario(usuarioID uint64, usuarioPassado models.Usuario) error {
 	statment, erro := usuario.db.Prepare("update usuarios set nome = ?, nick = ?, email = ? where id = ?")
 	if erro != nil {
@@ -90,5 +107,18 @@ func (usuario Usuarios) AtualizarUsuario(usuarioID uint64, usuarioPassado models
 		return erro
 	}
 
+	return nil
+}
+
+func (usuario Usuarios) DeletarUsuario(usuarioID uint64) error {
+	statment, erro := usuario.db.Prepare("delete from usuarios where id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer statment.Close()
+
+	if _, erro = statment.Exec(usuarioID); erro != nil {
+		return erro
+	}
 	return nil
 }
