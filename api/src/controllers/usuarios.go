@@ -123,6 +123,7 @@ func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
 		return
 	}
+	defer db.Close()
 
 	repositorio := repositorios.NovoRepositorioUsuarios(db)
 	erro = repositorio.AtualizarUsuario(usuarioID, usuarioPassado)
@@ -135,5 +136,23 @@ func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeletarUsuario(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Deletando Usuário!"))
+	parametros := mux.Vars(r)
+	usuarioID, err := strconv.ParseUint(parametros["usuarioId"], 10, 64)
+	if err != nil {
+		respostas.Erro(w, http.StatusBadRequest, err)
+	}
+
+	db, err := banco.Conectar()
+	if err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, err)
+	}
+	defer db.Close()
+
+	repositorio := repositorios.NovoRepositorioUsuarios(db)
+	err = repositorio.DeletarUsuario(usuarioID)
+	if err != nil {
+		respostas.Erro(w, http.StatusBadRequest, err)
+	}
+
+	respostas.JSON(w, http.StatusNoContent, nil)
 }
