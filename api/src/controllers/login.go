@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"api/src/autenticacao"
 	"api/src/banco"
 	"api/src/models"
 	"api/src/repositorios"
@@ -43,6 +44,9 @@ func Logar(w http.ResponseWriter, r *http.Request) {
 		respostas.Erro(w, http.StatusUnauthorized, erro)
 		return
 	}
+
+	token, _ := autenticacao.CriarToken(usuarioBuscadoBanco.ID)
+	w.Write([]byte(token))
 
 	w.Write([]byte("Você está logado!"))
 }
