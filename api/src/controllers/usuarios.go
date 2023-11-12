@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"api/src/autenticacao"
 	"api/src/banco"
 	"api/src/models"
 	"api/src/repositorios"
 	"api/src/respostas"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -70,7 +72,7 @@ func PesquisarUsuarios(w http.ResponseWriter, r *http.Request) {
 
 func PesquisarUsuario(w http.ResponseWriter, r *http.Request) {
 	parametros := mux.Vars(r)
-	usuarioID, erro := strconv.ParseUint(parametros["usuarioId"], 10, 64)
+	usuarioId, erro := strconv.ParseUint(parametros["usuarioId"], 10, 64)
 	if erro != nil {
 		respostas.Erro(w, http.StatusBadRequest, erro)
 		return
@@ -85,7 +87,7 @@ func PesquisarUsuario(w http.ResponseWriter, r *http.Request) {
 
 	var usuarioRecuperado models.Usuario
 	repositorio := repositorios.NovoRepositorioUsuarios(db)
-	usuarioRecuperado, erro = repositorio.BusacarUsuarioPorID(usuarioID)
+	usuarioRecuperado, erro = repositorio.BusacarUsuarioPorID(usuarioId)
 	if erro != nil {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -96,9 +98,20 @@ func PesquisarUsuario(w http.ResponseWriter, r *http.Request) {
 
 func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
 	parametros := mux.Vars(r)
-	usuarioID, erro := strconv.ParseUint(parametros["usuarioId"], 10, 64)
+	usuarioId, erro := strconv.ParseUint(parametros["usuarioId"], 10, 64)
 	if erro != nil {
 		respostas.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	usuarioIdDoToken, erro := autenticacao.ExtrairUsuarioId(r)
+	if erro != nil {
+		respostas.Erro(w, http.StatusUnauthorized, erro)
+		return
+	}
+
+	if usuarioId != usuarioIdDoToken {
+		respostas.Erro(w, http.StatusForbidden, errors.New("Não é permitido alterar um usuário que não seja o seu"))
 		return
 	}
 
@@ -126,7 +139,7 @@ func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	repositorio := repositorios.NovoRepositorioUsuarios(db)
-	erro = repositorio.AtualizarUsuario(usuarioID, usuarioPassado)
+	erro = repositorio.AtualizarUsuario(usuarioId, usuarioPassado)
 	if erro != nil {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -137,21 +150,35 @@ func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
 
 func DeletarUsuario(w http.ResponseWriter, r *http.Request) {
 	parametros := mux.Vars(r)
-	usuarioID, err := strconv.ParseUint(parametros["usuarioId"], 10, 64)
+	usuarioId, err := strconv.ParseUint(parametros["usuarioId"], 10, 64)
 	if err != nil {
 		respostas.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	usuarioIdDoToken, erro := autenticacao.ExtrairUsuarioId(r)
+	if erro != nil {
+		respostas.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if usuarioId != usuarioIdDoToken {
+		respostas.Erro(w, http.StatusForbidden, errors.New("Não é possível excluir um usuário que não seja o seu"))
+		return
 	}
 
 	db, err := banco.Conectar()
 	if err != nil {
 		respostas.Erro(w, http.StatusInternalServerError, err)
+		return
 	}
 	defer db.Close()
 
 	repositorio := repositorios.NovoRepositorioUsuarios(db)
-	err = repositorio.DeletarUsuario(usuarioID)
+	err = repositorio.DeletarUsuario(usuarioId)
 	if err != nil {
 		respostas.Erro(w, http.StatusBadRequest, err)
+		return
 	}
 
 	respostas.JSON(w, http.StatusNoContent, nil)

@@ -49,7 +49,6 @@ func Logar(w http.ResponseWriter, r *http.Request) {
 	if erro != nil {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
 	}
-	w.Write([]byte(token))
 
-	w.Write([]byte("\n Você está logado!"))
+	w.Write([]byte(token))
 }
