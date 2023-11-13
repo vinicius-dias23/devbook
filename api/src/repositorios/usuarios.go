@@ -122,3 +122,81 @@ func (usuario Usuarios) DeletarUsuario(usuarioID uint64) error {
 	}
 	return nil
 }
+
+func (usuario Usuarios) Seguir(usuarioId, seguidorId uint64) error {
+	statment, erro := usuario.db.Prepare("insert ignore into seguidores (usuario_id, seguidor_id) values (?, ?)")
+	if erro != nil {
+		return erro
+	}
+	defer statment.Close()
+
+	if _, erro = statment.Exec(usuarioId, seguidorId); erro != nil {
+		return erro
+	}
+
+	return nil
+}
+
+func (usuario Usuarios) PararDeSeguir(usuarioId, seguidorId uint64) error {
+	statment, erro := usuario.db.Prepare("delete from seguidores where usuario_id = ? and seguidor_id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer statment.Close()
+
+	if _, erro = statment.Exec(usuarioId, seguidorId); erro != nil {
+		return erro
+	}
+
+	return nil
+}
+
+func (usuario Usuarios) BuscarSeguidores(usuarioId uint64) ([]models.Usuario, error) {
+	linhas, erro := usuario.db.Query("select u.id, u.nome, u.nick, u.email, u.criadoEm from usuarios u inner join seguidores s on u.id = s.seguidor_id where s.usuario_id = ?", usuarioId)
+	if erro != nil {
+		return nil, erro
+	}
+	defer linhas.Close()
+
+	var seguidoresBuscados []models.Usuario
+	for linhas.Next() {
+		var seguidorBuscado models.Usuario
+		if erro = linhas.Scan(
+			&seguidorBuscado.ID,
+			&seguidorBuscado.Nome,
+			&seguidorBuscado.Nick,
+			&seguidorBuscado.Email,
+			&seguidorBuscado.CriadoEm,
+		); erro != nil {
+			return nil, erro
+		}
+		seguidoresBuscados = append(seguidoresBuscados, seguidorBuscado)
+	}
+
+	return seguidoresBuscados, nil
+}
+
+func (usuario Usuarios) BuscarSeguindo(usuarioId uint64) ([]models.Usuario, error) {
+	linhas, erro := usuario.db.Query("select u.id, u.nome, u.nick, u.email, u.criadoEm from usuarios u inner join seguidores s on u.id = s.usuario_id where s.seguidor_id = ?", usuarioId)
+	if erro != nil {
+		return nil, erro
+	}
+	defer linhas.Close()
+
+	var listaPessoasSeguindo []models.Usuario
+	for linhas.Next() {
+		var pessoaSeguindo models.Usuario
+		if erro = linhas.Scan(
+			&pessoaSeguindo.ID,
+			&pessoaSeguindo.Nome,
+			&pessoaSeguindo.Nick,
+			&pessoaSeguindo.Email,
+			&pessoaSeguindo.CriadoEm,
+		); erro != nil {
+			return nil, erro
+		}
+		listaPessoasSeguindo = append(listaPessoasSeguindo, pessoaSeguindo)
+	}
+
+	return listaPessoasSeguindo, nil
+}
