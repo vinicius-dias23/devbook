@@ -6,6 +6,7 @@ import (
 	"api/src/models"
 	"api/src/repositorios"
 	"api/src/respostas"
+	"api/src/seguranca"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -302,4 +303,67 @@ func BuscarSeguindo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respostas.JSON(w, http.StatusOK, seguindo)
+}
+
+func AtualizarSenha(w http.ResponseWriter, r *http.Request) {
+	usuarioIdDoToken, erro := autenticacao.ExtrairUsuarioId(r)
+	if erro != nil {
+		respostas.Erro(w, http.StatusUnauthorized, erro)
+		return
+	}
+
+	parametros := mux.Vars(r)
+	usuarioId, erro := strconv.ParseUint(parametros["usuarioId"], 10, 64)
+	if erro != nil {
+		respostas.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	if usuarioIdDoToken != usuarioId {
+		respostas.Erro(w, http.StatusForbidden, errors.New("Não é possível atualizar a senha de um usuário que não seja o seu"))
+		return
+	}
+
+	db, err := banco.Conectar()
+	if err != nil {
+		respostas.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+	defer db.Close()
+
+	corpoDaRequisicao, erro := ioutil.ReadAll(r.Body)
+	if erro != nil {
+		respostas.Erro(w, http.StatusUnprocessableEntity, erro)
+		return
+	}
+	var senhaNovaEAtual models.Senha
+	if erro = json.Unmarshal(corpoDaRequisicao, &senhaNovaEAtual); erro != nil {
+		respostas.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	repositorio := repositorios.NovoRepositorioUsuarios(db)
+	senhaUsuario, erro := repositorio.BuscarSenha(usuarioId)
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	if erro = seguranca.VerificarSenha(senhaUsuario, senhaNovaEAtual.Atual); erro != nil {
+		respostas.Erro(w, http.StatusUnauthorized, errors.New("Senha atual inválida"))
+		return
+	}
+
+	senhaNovaComHash, erro := seguranca.Hash(senhaNovaEAtual.Nova)
+	if erro != nil {
+		respostas.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	if erro = repositorio.AtualizarSenha(string(senhaNovaComHash), usuarioId); erro != nil {
+		respostas.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
+
+	respostas.JSON(w, http.StatusNoContent, nil)
 }

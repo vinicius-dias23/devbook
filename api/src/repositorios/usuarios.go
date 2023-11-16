@@ -200,3 +200,35 @@ func (usuario Usuarios) BuscarSeguindo(usuarioId uint64) ([]models.Usuario, erro
 
 	return listaPessoasSeguindo, nil
 }
+
+func (usuario Usuarios) BuscarSenha(usuarioId uint64) (string, error) {
+	linhas, erro := usuario.db.Query("select senha from usuarios where id = ?", usuarioId)
+	if erro != nil {
+		return "", nil
+	}
+	defer linhas.Close()
+
+	var usuarioBuscado models.Usuario
+
+	if linhas.Next() {
+		if erro = linhas.Scan(&usuarioBuscado.Senha); erro != nil {
+			return "", erro
+		}
+	}
+
+	return usuarioBuscado.Senha, nil
+}
+
+func (usuario Usuarios) AtualizarSenha(senhaNovaComHash string, usuarioId uint64) error {
+	statment, erro := usuario.db.Prepare("update usuarios set senha = ? where id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer statment.Close()
+
+	if _, erro = statment.Exec(senhaNovaComHash, usuarioId); erro != nil {
+		return erro
+	}
+
+	return nil
+}
