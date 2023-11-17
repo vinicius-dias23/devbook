@@ -35,6 +35,7 @@ CREATE TABLE publicacoes(
   conteudo varchar(300) not null,
   autor_id int not null,
   curtidas int default 0,
+  criadaEm timestamp default current_timestamp(),
 
   FOREIGN KEY (autor_id)
   REFERENCES usuarios(id)
