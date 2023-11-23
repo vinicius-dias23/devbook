@@ -9,6 +9,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func CriarPublicacao(w http.ResponseWriter, r *http.Request) {
@@ -44,8 +47,8 @@ func CriarPublicacao(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	publicacao := repositorios.NovoRepositorioPublicacoes(db)
-	publicacaoInserida.ID, erro = publicacao.Criar(publicacaoInserida)
+	repositorio := repositorios.NovoRepositorioPublicacoes(db)
+	publicacaoInserida.ID, erro = repositorio.Criar(publicacaoInserida)
 	if erro != nil {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
 		return
@@ -54,10 +57,51 @@ func CriarPublicacao(w http.ResponseWriter, r *http.Request) {
 	respostas.JSON(w, http.StatusCreated, publicacaoInserida)
 }
 func BuscarPublicacoes(w http.ResponseWriter, r *http.Request) {
+	usuarioID, erro := autenticacao.ExtrairUsuarioId(r)
+	if erro != nil {
+		respostas.JSON(w, http.StatusUnauthorized, erro)
+		return
+	}
 
+	db, erro := banco.Conectar()
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repositorio := repositorios.NovoRepositorioPublicacoes(db)
+	publicacoesBuscadas, erro := repositorio.BuscarPublicacoes(usuarioID)
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	respostas.JSON(w, http.StatusOK, publicacoesBuscadas)
 }
 func BuscarPublicacao(w http.ResponseWriter, r *http.Request) {
+	parametros := mux.Vars(r)
+	publicacaoID, erro := strconv.ParseUint(parametros["publicacaoId"], 10, 64)
+	if erro != nil {
+		respostas.Erro(w, http.StatusBadRequest, erro)
+		return
+	}
 
+	db, erro := banco.Conectar()
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+	defer db.Close()
+
+	repositorio := repositorios.NovoRepositorioPublicacoes(db)
+	publicacaoBuscada, erro := repositorio.BuscarPublicacao(publicacaoID)
+	if erro != nil {
+		respostas.Erro(w, http.StatusInternalServerError, erro)
+		return
+	}
+
+	respostas.JSON(w, http.StatusOK, publicacaoBuscada)
 }
 func AtualizarPublicacao(w http.ResponseWriter, r *http.Request) {
 
