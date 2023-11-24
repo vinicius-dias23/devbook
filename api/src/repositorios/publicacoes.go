@@ -90,3 +90,31 @@ func (repositorio Publicacoes) BuscarPublicacoes(usuarioID uint64) ([]models.Pub
 
 	return publicacoesBuscadas, nil
 }
+
+func (repositorio Publicacoes) AtualizarPublicacao(publicacaoID uint64, publicacaoDaRequisicao models.Publicacao) error {
+	statment, erro := repositorio.db.Prepare("update publicacoes set titulo = ?, conteudo = ? where id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer statment.Close()
+
+	if _, erro = statment.Exec(publicacaoDaRequisicao.Titulo, publicacaoDaRequisicao.Conteudo, publicacaoID); erro != nil {
+		return erro
+	}
+
+	return nil
+}
+
+func (repositorio Publicacoes) DeletarPublicacao(publicacaoID uint64) error {
+	statment, erro := repositorio.db.Prepare("delete from publicacoes where id = ?")
+	if erro != nil {
+		return erro
+	}
+	defer statment.Close()
+
+	if _, erro = statment.Exec(publicacaoID); erro != nil {
+		return erro
+	}
+
+	return nil
+}
