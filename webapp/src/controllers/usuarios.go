@@ -3,9 +3,8 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
+	"webapp/src/respostas"
 )
 
 func CriarUsuario(w http.ResponseWriter, r *http.Request) {
@@ -17,14 +16,21 @@ func CriarUsuario(w http.ResponseWriter, r *http.Request) {
 		"senha": r.FormValue("senha"),
 	})
 	if erro != nil {
-		log.Fatal(erro)
+		respostas.JSON(w, http.StatusBadRequest, respostas.ErroAPI{Erro: erro.Error()})
+		return
 	}
 
 	response, erro := http.Post("http://localhost:7777/usuarios", "application/json", bytes.NewBuffer(usuario))
 	if erro != nil {
-		log.Fatal(erro)
+		respostas.JSON(w, http.StatusInternalServerError, respostas.ErroAPI{Erro: erro.Error()})
+		return
 	}
 	defer response.Body.Close()
 
-	fmt.Println(response.Body)
+	if response.StatusCode >= 400 {
+		respostas.TratarStatusCodeErro(w, response)
+		return
+	}
+
+	respostas.JSON(w, response.StatusCode, nil)
 }
