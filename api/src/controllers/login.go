@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 func Logar(w http.ResponseWriter, r *http.Request) {
@@ -50,5 +51,7 @@ func Logar(w http.ResponseWriter, r *http.Request) {
 		respostas.Erro(w, http.StatusInternalServerError, erro)
 	}
 
-	w.Write([]byte(token))
+	usuarioID := strconv.FormatUint(usuarioBuscadoBanco.ID, 10)
+
+	respostas.JSON(w, http.StatusOK, models.DadosAutenticacao{ID: usuarioID, Token: token})
 }
