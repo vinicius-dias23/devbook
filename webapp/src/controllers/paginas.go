@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func CarregarTelaDeLogin(w http.ResponseWriter, r *http.Request) {
+func CarregarPaginaDeLogin(w http.ResponseWriter, r *http.Request) {
 	cookie, _ := cookies.Ler(r)
 	if cookie["token"] != "" {
 		http.Redirect(w, r, "/home", 302)
@@ -24,10 +24,10 @@ func CarregarTelaDeLogin(w http.ResponseWriter, r *http.Request) {
 	utils.ExecutarTemplate(w, "login.html", nil)
 }
 
-func CarregarTelaDeCadastroDeUsuario(w http.ResponseWriter, r *http.Request) {
+func CarregarPaginaDeCadastroDeUsuario(w http.ResponseWriter, r *http.Request) {
 	utils.ExecutarTemplate(w, "cadastro.html", nil)
 }
-func CarregarTelaHome(w http.ResponseWriter, r *http.Request) {
+func CarregarPaginaHome(w http.ResponseWriter, r *http.Request) {
 	url := fmt.Sprintf("%s/publicacoes", config.APIURL)
 	response, erro := requisicoes.FazerRequisicaoComAutenticacao(r, http.MethodGet, url, nil)
 	if erro != nil {
@@ -58,7 +58,7 @@ func CarregarTelaHome(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func CarregarTelaDeAtualizacaoPublicacao(w http.ResponseWriter, r *http.Request) {
+func CarregarPaginaDeAtualizacaoPublicacao(w http.ResponseWriter, r *http.Request) {
 	parametros := mux.Vars(r)
 	publicacaoID, erro := strconv.ParseUint(parametros["publicacaoId"], 10, 64)
 	if erro != nil {

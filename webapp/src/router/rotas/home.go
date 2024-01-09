@@ -8,6 +8,6 @@ import (
 var rotaHome = Rota{
 	URI:                "/home",
 	Metodo:             http.MethodGet,
-	Funcao:             controllers.CarregarTelaHome,
+	Funcao:             controllers.CarregarPaginaHome,
 	RequerAutenticacao: true,
 }
