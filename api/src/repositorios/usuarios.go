@@ -35,7 +35,7 @@ func (repositorio Usuarios) Criar(usuario models.Usuario) (uint64, error) {
 
 func (repositorio Usuarios) BuscarUsuarios(nomeOuNick string) ([]models.Usuario, error) {
 	nomeOuNick = fmt.Sprintf("%%%s%%", nomeOuNick)
-	linhas, erro := repositorio.db.Query("select id, nome, nick, email from usuarios where nome LIKE ? or nick LIKE ?",
+	linhas, erro := repositorio.db.Query("select id, nome, nick, email, criadoEm from usuarios where nome LIKE ? or nick LIKE ?",
 		nomeOuNick, nomeOuNick)
 	if erro != nil {
 		return nil, erro
@@ -50,6 +50,7 @@ func (repositorio Usuarios) BuscarUsuarios(nomeOuNick string) ([]models.Usuario,
 			&usuarioBuscado.Nome,
 			&usuarioBuscado.Nick,
 			&usuarioBuscado.Email,
+			&usuarioBuscado.CriadoEm,
 		); erro != nil {
 			return nil, erro
 		}

@@ -13,6 +13,6 @@ function logar(event) {
   }).done(function() {
     window.location = "/home";
   }).fail(function() {
-    alert("Usuário ou senha inválido!");
+    Swal.fire('Erro!', 'Usuário ou senha inválido!', 'error');
   })
 }
