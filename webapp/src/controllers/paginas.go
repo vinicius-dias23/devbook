@@ -40,7 +40,7 @@ func CarregarPaginaHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var publicacoes []models.Publicacoes
+	var publicacoes []models.Publicacao
 	if erro = json.NewDecoder(response.Body).Decode(&publicacoes); erro != nil {
 		respostas.JSON(w, http.StatusUnprocessableEntity, respostas.ErroAPI{Erro: erro.Error()})
 		return
@@ -50,7 +50,7 @@ func CarregarPaginaHome(w http.ResponseWriter, r *http.Request) {
 	usuarioID, _ := strconv.ParseUint(cookie["id"], 10, 64)
 
 	utils.ExecutarTemplate(w, "home.html", struct {
-		Publicacoes []models.Publicacoes
+		Publicacoes []models.Publicacao
 		UsuarioID   uint64
 	}{
 		Publicacoes: publicacoes,
@@ -78,7 +78,7 @@ func CarregarPaginaDeAtualizacaoPublicacao(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var publicacao models.Publicacoes
+	var publicacao models.Publicacao
 	if erro = json.NewDecoder(response.Body).Decode(&publicacao); erro != nil {
 		respostas.JSON(w, http.StatusUnprocessableEntity, respostas.ErroAPI{Erro: erro.Error()})
 		return
@@ -120,4 +120,19 @@ func CarregarPaginaPerfilUsuario(w http.ResponseWriter, r *http.Request) {
 	}
 
 	usuario, erro := models.BuscarUsuarioCompleto(usuarioID, r)
+	if erro != nil {
+		respostas.JSON(w, http.StatusInternalServerError, respostas.ErroAPI{Erro: erro.Error()})
+		return
+	}
+
+	cookies, _ := cookies.Ler(r)
+	usuarioLogadoID, _ := strconv.ParseUint(cookies["id"], 10, 64)
+
+	utils.ExecutarTemplate(w, "usuario.html", struct {
+		Usuario         models.Usuario
+		UsuarioLogadoID uint64
+	}{
+		Usuario:         usuario,
+		UsuarioLogadoID: usuarioLogadoID,
+	})
 }

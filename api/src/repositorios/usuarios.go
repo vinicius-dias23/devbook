@@ -62,7 +62,7 @@ func (repositorio Usuarios) BuscarUsuarios(nomeOuNick string) ([]models.Usuario,
 
 func (usuario Usuarios) BusacarUsuarioPorID(usuarioID uint64) (models.Usuario, error) {
 	var usuarioBuscado models.Usuario
-	linha, erro := usuario.db.Query("select id, nome, nick, email from usuarios where id = ?", usuarioID)
+	linha, erro := usuario.db.Query("select id, nome, nick, email, criadoEm from usuarios where id = ?", usuarioID)
 	if erro != nil {
 		return models.Usuario{}, erro
 	}
@@ -72,6 +72,7 @@ func (usuario Usuarios) BusacarUsuarioPorID(usuarioID uint64) (models.Usuario, e
 			&usuarioBuscado.Nome,
 			&usuarioBuscado.Nick,
 			&usuarioBuscado.Email,
+			&usuarioBuscado.CriadoEm,
 		)
 		if erro != nil {
 			return models.Usuario{}, erro
