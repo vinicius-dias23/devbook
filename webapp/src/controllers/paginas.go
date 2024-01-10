@@ -119,14 +119,19 @@ func CarregarPaginaPerfilUsuario(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookies, _ := cookies.Ler(r)
+	usuarioLogadoID, _ := strconv.ParseUint(cookies["id"], 10, 64)
+
+	if usuarioID == usuarioLogadoID {
+		http.Redirect(w, r, "/perfil", 302)
+		return
+	}
+
 	usuario, erro := models.BuscarUsuarioCompleto(usuarioID, r)
 	if erro != nil {
 		respostas.JSON(w, http.StatusInternalServerError, respostas.ErroAPI{Erro: erro.Error()})
 		return
 	}
-
-	cookies, _ := cookies.Ler(r)
-	usuarioLogadoID, _ := strconv.ParseUint(cookies["id"], 10, 64)
 
 	utils.ExecutarTemplate(w, "usuario.html", struct {
 		Usuario         models.Usuario
@@ -135,4 +140,38 @@ func CarregarPaginaPerfilUsuario(w http.ResponseWriter, r *http.Request) {
 		Usuario:         usuario,
 		UsuarioLogadoID: usuarioLogadoID,
 	})
+}
+
+func CarregarPaginaDePerfil(w http.ResponseWriter, r *http.Request) {
+	cookies, _ := cookies.Ler(r)
+	usuarioLogadoID, _ := strconv.ParseUint(cookies["id"], 10, 64)
+
+	usuario, erro := models.BuscarUsuarioCompleto(usuarioLogadoID, r)
+	if erro != nil {
+		respostas.JSON(w, http.StatusInternalServerError, respostas.ErroAPI{Erro: erro.Error()})
+		return
+	}
+
+	utils.ExecutarTemplate(w, "perfil.html", usuario)
+}
+
+func CarregarPaginaEdicaoDeUsuario(w http.ResponseWriter, r *http.Request) {
+	cookies, _ := cookies.Ler(r)
+	usuarioLogadoID, _ := strconv.ParseUint(cookies["id"], 10, 64)
+
+	canalUsuario := make(chan models.Usuario)
+	go models.BuscarDadosUsuario(canalUsuario, usuarioLogadoID, r)
+
+	usuario := <-canalUsuario
+
+	if usuario.ID == 0 {
+		respostas.JSON(w, http.StatusInternalServerError, respostas.ErroAPI{Erro: "Erro ao buscar usuário!"})
+		return
+	}
+
+	utils.ExecutarTemplate(w, "editar-usuario.html", usuario)
+}
+
+func CarregarPaginaDeAtualizacaoDeSenha(w http.ResponseWriter, r *http.Request) {
+	utils.ExecutarTemplate(w, "atualizar-senha.html", nil)
 }
